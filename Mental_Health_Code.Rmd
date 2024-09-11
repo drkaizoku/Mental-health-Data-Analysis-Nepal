@@ -1,0 +1,447 @@
+---
+title: "FinalMilestone"
+author: "Sujan Aryal || 20049373"
+date: '2022-04-20'
+output: html_document
+toc: true
+theme: united
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<!-- #steps  -->
+<!-- #first set working directory. -->
+<!-- #getwd() -->
+<!-- #use read csv -->
+
+
+# **Introduction**
+In any industry, data is regarded as an essential component. Data analysis and visualization can be performed in a variety of industries for a variety of goals. For example, businesses can use it to maximize profits, while government agencies can use it to depict demographic differences. The dataset I used for this project is "Mental Health Problems Dataset (MHPD)," which was studied and provided by a relative from MOHP, between 2011 and 2014. This data set provides information regarding mental health disorders such as depression, anxiety, epilepsy, psychosis, etc. in Nepal. The data set has 1576 rows and 16 columns with data such as date, district, zone, male, female, age, and so on. Throughout my report, I will analyze and visualize mental health concerns in Nepal based on age, gender, district, and so forth. During this project i will not only visualize the mental health conditions  , but will also try to precisely predict results for future analysis through this data set, during machine learning techniques later on. I'll be looking for insights, sorts of mental health disorders, and people's conditions in Nepal between the ages of 18 and 60. Similarly, I will get insights on the people's conditions in the geographical area where the data was collected.
+
+# **Aim**
+The main aim of this project is to analyse Nepali Mental Health data and interpret different types of results.
+
+# **Objectives**
+1. Gaining an understanding of the dataset and its attributes
+2. To clean the data and conduct any necessary adjustments.
+3. Conduct preliminary data analysis, such as summary statistics
+4. To further investigate and show data using various graphs and R packages such as ggplot2.
+5. To run statistical tests on the data
+6. To implement machine learning techniques and algorithms to the dataset
+
+
+# **Data Preparation**
+First of all, I set the working directory and installed and imported libraries namely: dplyr, ggplot2, treemap, corrplot, plotly, leaflet, caret, e1071, tm, tidytext and wordcloud. this libraries will help to manipulate, analyse, visualize and predict the different state of the project.
+
+```{r message=FALSE}
+#setting working directory
+setwd("E:/Masters/second year/3rd sem/RProgramming/secondMilestone/Rmarkdown")
+# class(MentalHealthData)
+#importing libraries
+library(dplyr)
+library(ggplot2)
+library(corrplot)
+library(treemap)
+library(leaflet)
+library(tm)
+library(tidytext)
+library(wordcloud)
+
+```
+
+
+<!-- Importing .csv files  -->
+
+# importing csv file by using read.csv()
+```{r input_file, include=TRUE}
+MentalHealthData <-  read.csv("Mental_health_dataset.csv", sep=",")
+dim(MentalHealthData)
+```
+
+
+# using head tail and class for oberservations.
+```{r}
+class(MentalHealthData) #To see the data type
+head(MentalHealthData) # To see the initial first few observations 
+tail(MentalHealthData) # To see the last few observations 
+```
+
+# **Filtering and renaming columns and variables for further better analysis and visualization**
+There are not so many columns that needs to be filted but in order to get data related to column firstly, the vector was created vector of columns that I want to keep. then i filtered the data with those columns and finally mapped the existing column names to new one with the help of another vector. lastly the row key has been reset and structure of the dataframe has been displayed using str() function.
+
+```{r}
+#filtering columns / using short column names...
+col_selections <- c('District_Name', 'Zone', 'Ecological_Belt', 'Development_Region', 'Year_BS',
+                                       'Year_AD', 'condition', 'type', 'Male', 'Female', 'Age', 'Married',
+                                       'Unmarried', 'Education', 'Employment', 'lat', 'long')
+mental_df <- MentalHealthData[,col_selections]
+colnames(mental_df) <- c('DName', 'Zone', 'EBelt', 'DRegion', 'YearB',
+                                       'YearA', 'condition', 'type', 'Male', 'Female', 'Age', 'Married',
+                                       'Unmarried', 'Edu', 'Emp', 'lat', 'long')
+row.names(mental_df) <- NULL
+str(mental_df)
+
+```
+
+# **Handling null fields**
+There are only two columns in this dataset containing null or uncleaned data, and they have been handled by setting them to 0. The null field has been converted into 0 for education and employment. Finally, empty fields are depicted using the colsum() and is.na() methods.
+
+```{r}
+mental_df$Edu[is.na(mental_df$Edu)] <- 0
+mental_df$Emp[is.na(mental_df$Emp)] <- 0
+colSums(is.na(mental_df))
+
+```
+
+
+# **Initial Data Analysis Begins**
+During this step, general data analysis was carried out. Subsequently, summary statistics for the variables in the dataset were computed. Similarly, multiple univariate analyses were carried out.
+
+# Summary Statistics
+Summary statistics ia the first step after data transformation. For this stage, summary statistics (mean median, quartiles, mode) are calculated for different numerical fields and structure of character fields are demonstrated.
+```{r}
+summary(mental_df)
+table(mental_df$YearA)
+```
+
+# Boxplot to visualize distribution of Year
+
+In order to visualize the distribution of Year, I have implemented the boxplot for Year which is illustrated below:
+
+```{r}
+#boxplot for Age
+
+boxplot(mental_df$YearB)
+```
+# The above box plot illustrates the distribution of Year in the dataset. Y axis indicates year and x axis indicated the frequency. line between the box represents the dense distribution indicating the most data mental issues is between 30 to 50. similarly, we can see in the figure most issues are between 2069-2077 year. 
+
+Furthermore, I have filtered the data for Age of 18 and its result has been filtered below:
+
+```{r}
+mental_df%>% filter(Age == 18) %>% select(YearA, condition, type, DName, Emp)
+```
+The above data frame illustrated there lies Mental issues for the age of 18, which is less compared to those of Age between 30-50. through this we can draw a picture that after 30-50 most people in Nepal suffer from various Mental Issues. Furthermore, the filter shows that most of the unemployed people who are of age 18 has suffered from Mental Health issues.
+
+
+# Histogram Plot
+After demonstration of box plot to visualize the distribution of years i have also visualized it with the help of histogram plot.
+```{r}
+#histogram
+
+ggplot(mental_df, aes(Age))+geom_histogram(bins="35")
+```
+The graph above depicts the relationship between age and the frequency of mental disorders. The frequency count is shown on the y axis, and the age is shown on the x axis. The figure appears to be rising in nature, implying that mental disorders begin to increase at the age of 30 and continue to increase until the age of 60. In your twenties, the problems appear to be few and far between, but they become more prevalent beyond 30 years. Similarly, I plotted a log of the number of people with mental illnesses.
+
+below i have plotted data for Male suffering from Mental issues, followed by female.
+```{r}
+hist(log(mental_df$Male))
+```
+The distribution of log of Males suffering from mental illness from age 18 - 60. the log shows the frequency of increment that means, Males with higher age between 30-60 have been affected more.
+
+```{r}
+hist(log(mental_df$Female))
+```
+
+for female it's quite different the log shows that female has been suffering more from Mental issues as compared to male population in Nepal.
+
+
+# **Data Exploration and Visualization using correlation between variables**
+# Showing correlation between variables of the dataset
+As we all know, correlation is the initial stage of data exploration. Correlation between variables can be performed using the cor() function. The code below shows the relationship between variables such as married, unmarried, employed, and so on.
+```{r}
+#Correlation
+cor(MentalHealthData$Age, MentalHealthData$Male)
+```
+The following result is roughly 0.10, indicating that age is connected to male type but not strongly. Rather of limiting ourselves to one correlation, let us depict it using a corrplot diagram.
+```{r}
+#Corrplot
+mentalCor <- MentalHealthData[,c('Year_BS', 'Year_AD', 'Male', 'Female', 'Age', 'Married', 'Unmarried')]
+mentalCor <- na.omit(mentalCor)
+correlations <- cor(mentalCor) #correlation
+corrplot::corrplot(correlations, method="circle") #heatmap
+```
+Correlation can range between -1 and 1. The graph above displays the relationship between many variables. In this case, both axes have all of the variables colored to show their relationship to one another. The stronger the association, the closer the number is to 1 or -1. Similarly, a value near 0 has very little correlation. When there is a positive correlation, one tends to increase with an increase in the other, and when there is a negative correlation, one tends to decrease with an increase in the other.
+The above diagram shows that the number of people suffering from mental illnesses has a strong positive relationship with the number of adults aged 30-60. Similarly, unemployed people appear to have a positive relationship with issue type.
+
+
+
+# Scatter Plot
+The next step would be scatter plot after demonstrating the correlation and heatmap. Scatter plot takes two variables as input and plots point in the graph. Similarly in this context we have taken year and number of people killed and plotted in scatterplot below: 
+```{r}
+#Mental issues per year
+plot(mental_df$YearA, log(mental_df$Age), main="Year vs Age", xlab = "Year", ylab = "Age")
+```
+The graph above depicts a log of the number of persons affected by various types of mental illnesses from 2012 to 2014. According to the diagram, at first, just a small number of persons between the ages of 18 and 30 were impacted. which steadily climbed after the age of 30 and decreased again after the age of 60 or more The direction, however, is not stable because the correlation between the variables is insignificant. We may plot four different sorts of variables at the same time using ggplot. two on the axes, one for color and the other for shape
+```{r}
+ggplot(mental_df, aes(Age, log(Male), col=as.factor(type), shape=as.factor(condition)))+geom_point()
+
+```
+The above diagram demonstrates log of number of male suffering from mental issues from age 18-60 and are in different condition. As per the diagram, initially number of people have minor, major or severe condition, we can also see few are normal. For the age 30 or more there are more major condition as compared to normal.
+
+
+
+
+Now, lets plot Mental issues by age here because we don't have much yearly data in point graph with the line. For this I grouped the issues by age and retrieved frequency of issues by age  and ploted it using ggploot geom_point() and stat_smooth() method.
+```{r}
+#Age issues  per year
+affect_by_age <- mental_df %>% 
+  group_by(Age) %>% 
+  summarise(count=n())
+ggplot(affect_by_age, aes(x=Age, y=count))+geom_point()+stat_smooth()
+
+```
+
+
+```{r}
+#per year
+affect_by_year <- mental_df %>% 
+  group_by(YearB) %>% 
+  summarise(count=n())
+ggplot(affect_by_year, aes(x=YearB, y=count))+geom_point()+stat_smooth()
+
+```
+The above diagram illustrates the frequency of Mental issues Nepal. As per the diagram we can see the frequency of Mntal condition is increasing  between 30-60 of age, diminished little until around the age of 30-45 and increased again. as per the diagram we may assume that people above the age of 30 are likely to be affected by Mental issues till the age of 60.
+
+# Bar Graph
+#  Age wise Mental issues types
+Now lets perform real visualization. Here i am visualizing the frequency of terrorist attacks on Nepal by the type of attack. I will plot year and frequency of attacks on x and y axis respectively and fill the color by the type of attack.
+```{r}
+ggplot(data=mental_df, aes(x=Age,fill=type)) + geom_bar() + ggtitle("Mental issues by age in Nepal")+         
+  labs(x = "Age", y = "Mental Issues/ condition Types")
+```
+The above diagram demonstrates the mental issues faced by various range of people by age of 18-60. On the X axis lies the age of people, on the y axis lies the frequency of the types and different colors are plotted on graph for different types. as per the diagram, mental retardation, epilepsy depression and conversive disorder is increasing where as anxiety and alcoholism is rising more as compared to others. 
+
+# Age wise type  of mental issues
+Now lets visualize the frequency of terrorist attacks of Mental issues Nepal by the issues type. I will plot Age and frequency of issues types on x and y axis respectively and group the plots by the type.
+```{r}
+mental_condition <- mental_df[which(mental_df$type !='.'), ] 
+ggplot(mental_condition, aes(x = Age))+ labs(title =" Mental Issues by age with type", x = "Age", y = "Types of Mental Issues") + 
+  geom_bar(colour = "grey19", fill = "tomato3") + facet_wrap(~type, ncol = 4) + theme(axis.text.x = element_text(hjust = 1, size = 12))+
+  theme(strip.text = element_text(size = 16, face = "bold"))
+```
+The above diagram demonstrates the Age with respect to type. On the X axis lies the Age  of people, on the y axis lies the frequency of the types and different groups are plotted on graph for issues type. as per the diagram, alcoholism is higher at the age of 30 to 40, anxiety i higher among 30, 50. psychosis is higher among age of 40.
+
+
+
+
+
+# Number of Males per zone
+Now lets analyze and visualize the data of Male in dataset as per the zone of Nepal. Firstly I have plotted treemap with the number of Males per zone. and I have filtered dataset with number of Males age greater than 30 per zone and plotted into the graph.
+```{r}
+dzone <- mental_df %>% filter(Male > 30)
+treemap(dzone, 
+        index=c("Zone"), 
+        vSize = "Male",  
+        palette = "Reds",  
+        title="Male per Zone", 
+        fontsize.title = 12,
+        type="value",
+        title.legend = "Number of Male by zone",
+
+)
+```
+the above tree maps shows no of male by zone. 
+
+
+# **Statistical Testing**
+# T-test
+
+Setting up Null Hypothesis
+  ->There is no significant difference in condition for number of people of age 18 to 45 .
+Seting up data for the T-Test
+  ->Filtering the data with condition typ either severe  or major only and selecting condition and age from the dataframe.
+  
+```{r}
+conditionIssues <- mental_df %>%
+  select (condition, Age) %>%
+  filter(tolower(condition)=="severe" | tolower(condition)=="major")
+```
+
+Applying T-Test to resulted dataframe
+
+```{r}
+t.test(data =conditionIssues, Age ~ condition )
+```
+According to the above analysis of the findings, the p-value is very near to zero, indicating that our null hypothesis is extremely unlikely. I rejected the null hypothesis, i.e. the difference in the means of adults aged 18 to 40 is 0. Therefore, with the exception of the only alternative, the difference between them is not 0 but there is a real difference. Similarly, the confidence interval for the difference revealed in the Above Test is 95%.
+
+
+# **Map**
+# Map Plot (Clustering the MEntal Issues for gnalular view.)
+
+For the next dynamic visualization, I have implemented map plot for Mental Issues of different regions. Firstly I filtered the data with null latitude and longitude. Then I added map image with the markers of Nepal then i provided, both bs and ad date, Ecological Belt, zone, illness type, illness condition, male & female with their corresponding age,  and finally i set clusterOptions to markerClusterOptions() function.
+
+
+```{r}
+
+mental_dfll <- mental_df %>%
+ filter(!is.na(lat) & !is.na(long))
+
+clusterNepalMap <- leaflet() %>%
+ addTiles('https://cartocdn_{s}.global.ssl.fastly.net/base-midnight/{z}/{x}/{y}.png',
+ attribution='&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap
+</a> &copy; <a href="http://cartodb.com/attributions">CartoDB</a>')
+
+clusterNepalMap %>% addMarkers(data=mental_dfll,popup=paste0("<div class=\"table-title\">
+<h3>Mental Issues of Nepal Details</h3>
+</div>)
+
+<table class=\"table-fill\">
+<thead>
+<tr>
+<th class=\"text-left\">MetaData Name</th>
+<th class=\"text-left\">MetaData Value</th>
+</tr>
+</thead>
+<tbody class=\"table-hover\">
+<tr>
+<td class=\"text-left\">Event Date</td>
+<td class=\"text-left\">",mental_dfll$YearA,'/',mental_dfll$YearB,"</td>
+</tr>
+<tr>
+<td class=\"text-left\">Ecological Belt</td>
+<td class=\"text-left\">",mental_dfll$EBelt,"</td>
+</tr>
+<tr>
+<td class=\"text-left\">Zone</td>
+<td class=\"text-left\">",mental_dfll$Zone,"</td>
+</tr>
+<tr>
+<td class=\"text-left\">Illness Type</td>
+<td class=\"text-left\">",mental_dfll$type,"</td>
+</tr>
+<tr>
+<td class=\"text-left\">Condition</td>
+<td class=\"text-left\">",mental_dfll$condition,"</td>
+</tr>
+<tr>
+<td class=\"text-left\">Male</td>
+<td class=\"text-left\">",mental_dfll$Male,"</td>
+</tr>
+<tr>
+<td class=\"text-left\">Female</td>
+<td class=\"text-left\">",mental_dfll$Female,"</td>
+</tr>
+<tr>
+<td class=\"text-left\">Age</td>
+<td class=\"text-left\">",mental_dfll$Age,"</td>
+</tr>
+</tbody>
+</table>"), clusterOptions = markerClusterOptions())
+
+```
+
+The accompanying diagram illustrates mental health difficulties ranging from severe to severe in Nepal's several districts. This map is interactive in HTML (made by rmarkdown), and it can be zoomed in for more extensive data analysis. This map depicts mental health issues from several districts in Nepal. According to the map, the most of the issues are from Bheri, Rapti, and Bagmati.
+
+
+# **Machine Learning Algorithms**
+Linear regression is a function that provides the change or update in output as a result of a change in input. The plotted point graph with geom smooth() method is addressed for linear regression to check the linear relationship between the variables.
+```{r}
+issues <- mental_df %>% 
+  group_by(YearB) %>% 
+  summarise(count=n())
+ggplot(issues, aes(x=YearB, y=count))+geom_point()+geom_smooth(method = "lm")
+```
+
+The horizontal line detects the two variables in this diagram's linear relationship between year and frequency of Mental problems. As input and output variables, the year and frequency of Mental Issues are employed. and can fit linear models, as illustrated in the image above. The majority of the values are near to the line, while some are spread out to form outlines.
+```{r}
+cor(issues$YearB, issues$count)
+```
+The correlation between year and frequency of assault is -0.7032947, indicating a negative relationship between the variables, implying that a drop in one tends to increase another and likewise.
+
+# Simple linear regression
+In basic linear regression, there is only one input parameter and one corresponding output. The incidence of psychological illnesses and the year of occurrence are employed for understanding in this scenario, with the year serving as an input parameter and the frequency serving as a single output.
+
+```{r}
+model_linear_regression = lm(issues$count ~ issues$YearB)
+model_linear_regression
+#summary(simple_linear_regression)
+```
+
+As per the result, intercept is 103423.42  and slope is  -49.75 for the year variable. From the above interpretation, the formula can be written as no_of_mental_issues = -49.75*year 103423.42
+
+Two different things can be illustrated from the formula
+1. For the unit change in year, number of mental issues decreases by -49.75
+2. For year (future) = 2030 we can know no_of_mental_issues will be -49.75*103423.42 = -5,145 mental issues might be predicted for year 2030.
+
+
+# multi linear regression
+There are multiple input variables and one contineus output variable in multi linear regression. Here i have taken number of kills as output variable being based on Age, Male, Female, Married, Unmarried, YearB as input variable. firstly I converted all the factor fields as factor. After that i formulated the linear regression formulae.
+```{r}
+mental_issues_df_factored <- mental_df %>%
+  select(Age, Male, Female, Married, Unmarried, YearB)
+mental_issues_df_factored$Male <- as.factor(mental_issues_df_factored$Male)
+mental_issues_df_factored$Female <- as.factor(mental_issues_df_factored$Female)
+mental_issues_df_factored$Married <- as.factor(mental_issues_df_factored$Married)
+mental_issues_df_factored$Unmarried <- as.factor(mental_issues_df_factored$Unmarried)
+
+
+mental_issues_df_factored <- mental_issues_df_factored[complete.cases(mental_issues_df_factored),]
+
+reg_model <- lm(Age ~  Male + Female +  Married + Unmarried + YearB,
+             data = mental_issues_df_factored)
+anova(reg_model)
+#summary(reg_model)
+```
+
+
+The Aalysis of Variance table is shown above. When the input variables are categorical and the output variable is continuous, it is implemented. It demonstrates that the age and type sectors have substantial p values, while the rest are not as essential for prediction.
+
+Predicting the 
+```{r warning=FALSE}
+predict(reg_model, mental_issues_df_factored[1:30, c('Age', 'Male', 'Female',  'Married', 'Unmarried', 'YearB')])
+```
+```{r warning=FALSE}
+predict(reg_model, mental_issues_df_factored[1:30, c('Age', 'Male', 'Female', 'Married', 'Unmarried', 'YearB')], interval = "confidence")
+#reg_model$residuals
+```
+
+Finally, we can see from the following example how we can use linear regression to predict a continuous variable.
+
+
+
+# Text analysis of motive of attacks
+The textfield in the dataset motive is where we may perform text analysis. In this case, 2% of the sample entries will be chosen at random. The variable "type" in the dataset is transformed to text, numerals, punctuation, and stop words are deleted, and a term document matrix is created. The text is then sorted in decreasing order. Spaces will be deleted from often used and descriptive keywords such as The, depression, psychosis, and so forth. The wordcloud was created using the tm and tm map libraries. Finally, it is plotted as wordcloud using the wordcloud library.
+```{r warning=FALSE}
+#Text analysis of motive of attacks
+mental_df$type <- tolower(mental_df$type)
+known_df <- mental_df %>%
+  filter(type != "Alcoholism")
+er_df <-known_df %>%
+  filter(type != "")
+
+text <- sample(er_df$type, nrow(er_df)/2)
+specificWords <- c("Dipression", "Conversive disorder (Hysteria)", "Epilesy", "Mental retardation", "Epilesy", "Psychosis", "Anxiety (Neurosis)", "Dipression", "Conversive disorder (Hysteria)", "Epilesy", "Mental retardation", "Epilesy")
+text<-sapply(text, function(x) gsub("\n"," ",x))
+myCorpus<-VCorpus(VectorSource(text))
+
+
+myCorpusClean <- myCorpus %>%
+  tm_map(content_transformer(removeNumbers)) %>% 
+  tm_map(content_transformer(removePunctuation)) %>%
+  tm_map(content_transformer(removeWords),tidytext::stop_words$word) %>%
+  tm_map(content_transformer(removeWords),specificWords)
+myDtm = TermDocumentMatrix(myCorpusClean,
+                           control = list(minWordLength = 3))
+freqTerms <- findFreqTerms(myDtm, lowfreq=1)
+m <- as.matrix(myDtm)
+v <- sort(rowSums(m), decreasing=TRUE)
+myNames <- names(v)
+d <- data.frame(word=myNames, freq=v)
+wctop <-wordcloud(d$word, d$freq, min.freq=5, colors=brewer.pal(9,"Set1"))
+```
+I projected mental difficulties text to wordcloud to graphically depict word frequency. According to the following wordcloud diagram, we can visualize the different forms of mental illnesses from different regions of Nepal. Mental retardation, psychosis, retardation, sadness, and other weighty adjectives tend to be associated with the mental issue type.
+
+
+# **Conclusion**
+
+In any industry, data is regarded as an essential component. Data analysis and visualization can be performed in a variety of industries for a variety of goals. For example, businesses can use it to maximize profits, while government agencies can use it to depict demographic differences. The dataset I used for this project is "Mental Health Problems Dataset (MHPD)," which was studied and provided by a relative from MOHP, between 2011 and 2014. This data set provides information regarding mental health disorders such as depression, anxiety, epilepsy, psychosis, etc. in Nepal. The data set has 1576 rows and 16 columns with data such as date, district, zone, male, female, age, and so on. Throughout my report, I will analyze and visualize mental health concerns in Nepal based on age, gender, district, and so forth. During this project i will not only visualize the mental health conditions  , but will also try to precisely predict results for future analysis through this data set, during machine learning techniques later on. I'll be looking for insights, sorts of mental health disorders, and people's conditions in Nepal between the ages of 18 and 60. Similarly, I will get insights on the people's conditions in the geographical area where the data was collected.
+
+Through this project, I learned R programming and its libraries like as dplyr, ggplot2, treemap, corrplot, plotly, and others. First, in this assignment, I learned about the dataset of my choosing, "Mental Health Dataset." After loading the dataset, I gained a knowledge of dataframes. Then I did transformation and purification, and I discovered that a large dataset with 2625 rows and 18 columns may be broken down to extract only the necessary fields. Manipulation and display of datasets also taught me how to use Python/R programming to analyze large datasets. I applied the findings from the dataset, converting some variables to binary and others to basic. 
+
+I developed a grasp of variable correlation, how they can be connected to one another, and how we can graphically express variable correlation using corrplot. Data visualization skills were also acquired by graphically representing various variables using histogram plots, boxplots, graphs, and so on. I also learned about the T-Test statistical testing approach, as well as other machine learning techniques like Linear Regression and Text Analysis. This aided in making predictions and analyzing the dataset's text. I also learned about the significance of data combining, data replacement, data removal, and data analysis and visualization in general.
+
+Throughout this process, I had numerous difficulties, but they were all overcome, that not only enhanced my confidence and moreover helped strengthen my problem-solving skills.
+
+
